@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Personal Finance Manager</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+        background-color: #f5f7fa;
+        color: #333;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .sidebar {
+        background-color: #2c3e50;
+        color: white;
+        min-height: 100vh;
+        padding-top: 20px;
+    }
+
+    .sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 5px 0;
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .sidebar .navbar-brand {
+        color: white;
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 30px;
+        display: block;
+        text-align: center;
+    }
+
+    .sidebar .navbar-brand span {
+        color: #3498db;
+    }
+
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+        border: none;
+    }
+
+    .card-header {
+        background-color: rgba(52, 152, 219, 0.1);
+        font-weight: 600;
+        border-bottom: none;
+        padding: 15px 20px;
+    }
+
+    .main-content {
+        padding: 30px;
+    }
+
+    .account-card:hover {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
+    }
+
+    .balance {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .goal-card .progress-bar {
+        background-color: #3498db;
+    }
+
+    #total-balance {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    .chart-container {
+        height: 250px;
+        position: relative;
+    }
+
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1050;
+        min-width: 300px;
+    }
+
+    .list-group-item-action:hover {
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+
+    .dark-mode {
+        background-color: #1a1a2e;
+        color: #e6e6e6;
+    }
+
+    .dark-mode .card {
+        background-color: #16213e;
+        color: #e6e6e6;
+    }
+
+    .dark-mode .card-header {
+        background-color: rgba(52, 152, 219, 0.2);
+        color: white;
+    }
+
+    .dark-mode .list-group-item {
+        background-color: #16213e;
+        color: #e6e6e6;
+        border-color: #0f3460;
+    }
+
+    .dark-mode .text-muted {
+        color: #b5b5c3 !important;
+    }
+
+    .spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0;
+    }
+
+    @media (max-width: 767.98px) {
+        .sidebar {
+            min-height: auto;
+        }
+
+        .main-content {
+            padding: 15px;
+        }
+    }
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+      <a href="#" class="navbar-brand">Finance<span>Manager</span></a>
+      <div class="position-sticky">
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link active" href="#">
+              <i class="bi bi-speedometer2 me-2"></i>
+              Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="bi bi-credit-card me-2"></i>
+              Accounts
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="bi bi-arrow-left-right me-2"></i>
+              Transactions
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="bi bi-graph-up me-2"></i>
+              Goals
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="bi bi-gear me-2"></i>
+              Settings
+            </a>
+          </li>
+          <li class="nav-item mt-5">
+            <a class="nav-link text-danger" href="#" id="logout-btn">
+              <i class="bi bi-box-arrow-right me-2"></i>
+              Logout
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+      <div id="notifications-container"></div>
+
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard</h1>
+        <div>
+          <button id="refresh-data" class="btn btn-outline-primary">
+            <span id="refresh-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            Refresh Data
+          </button>
+          <button id="dark-mode-toggle" class="btn btn-outline-secondary ms-2">
+            <i class="bi bi-moon"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading spinner -->
+      <div id="loading-spinner" class="spinner-container">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Total Balance -->
+        <div class="col-lg-4 mb-4">
+          <div class="card">
+            <div class="card-header">Total Balance</div>
+            <div class="card-body text-center">
+              <p id="total-balance" class="text-success mb-0">€0.00</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-8 mb-4">
+          <div class="card">
+            <div class="card-header">Quick Actions</div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-6 col-md-3 mb-2">
+                  <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#add-transaction-modal">
+                    <i class="bi bi-plus-circle"></i> Add Transaction
+                  </button>
+                </div>
+                <div class="col-6 col-md-3 mb-2">
+                  <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#add-account-modal">
+                    <i class="bi bi-bank"></i> Add Account
+                  </button>
+                </div>
+                <div class="col-6 col-md-3 mb-2">
+                  <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#add-goal-modal">
+                    <i class="bi bi-flag"></i> Add Goal
+                  </button>
+                </div>
+                <div class="col-6 col-md-3 mb-2">
+                  <button class="btn btn-outline-primary w-100">
+                    <i class="bi bi-file-earmark-text"></i> Report
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Accounts List -->
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Your Accounts</span>
+            </div>
+            <div class="card-body">
+              <div id="accounts-list" class="row"></div>
+            </div>
+          </div>
+
+          <!-- Recent Transactions -->
+          <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Recent Transactions</span>
+              <a href="#" class="btn btn-sm btn-link">View All</a>
+            </div>
+            <div class="card-body">
+              <div id="recent-transactions"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Balance Chart and Goals -->
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header">Balance Distribution</div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="balance-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financial Goals -->
+          <div class="card mt-4" id="goals-section">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Financial Goals</span>
+              <button class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#add-goal-modal">
+                Add Goal
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="goals-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Add Transaction Modal -->
+<div class="modal fade" id="add-transaction-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Transaction</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="add-transaction-form">
+          <div class="mb-3">
+            <label for="transaction-account" class="form-label">Account</label>
+            <select class="form-select" id="transaction-account" name="transaction-account" required></select>
+          </div>
+          <div class="mb-3">
+            <label for="transaction-amount" class="form-label">Amount</label>
+            <input type="number" class="form-control" id="transaction-amount" name="transaction-amount" step="0.01" required>
+            <div class="form-text">Use negative values for expenses</div>
+          </div>
+          <div class="mb-3">
+            <label for="transaction-description" class="form-label">Description</label>
+            <input type="text" class="form-control" id="transaction-description" name="transaction-description" required>
+          </div>
+          <div class="mb-3">
+            <label for="transaction-category" class="form-label">Category</label>
+            <select class="form-select" id="transaction-category" name="transaction-category" required>
+              <option value="Food">Food</option>
+              <option value="Transportation">Transportation</option>
+              <option value="Housing">Housing</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Health">Health</option>
+              <option value="Travel">Travel</option>
+              <option value="Education">Education</option>
+              <option value="Income">Income</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="transaction-date" class="form-label">Date</label>
+            <input type="date" class="form-control" id="transaction-date" name="transaction-date">
+          </div>
+          <div class="text-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Transaction</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+  // API service mock (for demonstration purposes)
+  const API = {
+      getAccounts: async function() {
+          // In a real app, this would fetch data from your server
+          return [
+              { _id: '1', name: 'Checking Account', type: 'Bank', balance: 2500.75 },
+              { _id: '2', name: 'Savings Account', type: 'Bank', balance: 15000 },
+              { _id: '3', name: 'Credit Card', type: 'Credit', balance: -540.30 }
+          ];
+      },
+
+      getRecentTransactions: async function() {
+          return [
+              { _id: '1', description: 'Grocery Shopping', date: '2025-03-20', amount: -85.40, category: 'Food' },
+              { _id: '2', description: 'Salary', date: '2025-03-15', amount: 2800, category: 'Income' },
+              { _id: '3', description: 'Restaurant', date: '2025-03-18', amount: -65.75, category: 'Food' },
+              { _id: '4', description: 'Utility Bill', date: '2025-03-10', amount: -120.50, category: 'Utilities' }
+          ];
+      },
+
+      getGoals: async function() {
+          return [
+              { _id: '1', name: 'Emergency Fund', currentAmount: 5000, targetAmount: 10000, targetDate: '2025-12-31' },
+              { _id: '2', name: 'Vacation', currentAmount: 1200, targetAmount: 3000, targetDate: '2025-06-30' }
+          ];
+      },
+
+      getTransactionsByAccount: async function(accountId) {
+          // This would fetch transactions for a specific account
+          return [
+              { description: 'Grocery Shopping', date: '2025-03-20', amount: -85.40, category: 'Food' },
+              { description: 'Gas Station', date: '2025-03-17', amount: -45.00, category: 'Transportation' },
+              { description: 'Online Shopping', date: '2025-03-15', amount: -129.99, category: 'Shopping' }
+          ];
+      },
+
+      addTransaction: async function(transactionData) {
+          console.log('Adding transaction:', transactionData);
+          // In a real app, this would send data to your server
+          return { success: true };
+      }
+  };
+
+  // Dark mode toggle
+  document.getElementById('dark-mode-toggle').addEventListener('click', function() {
+      document.body.classList.toggle('dark-mode');
+
+      // Update chart colors if chart exists
+      if (window.balanceChart) {
+          window.balanceChart.options.legend.labels.fontColor =
+              document.body.classList.contains('dark-mode') ? '#fff' : '#666';
+          window.balanceChart.update();
+      }
+  });
+
+  // Logout button
+  document.getElementById('logout-btn').addEventListener('click', function() {
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+  });
+
+  // Populate account select in the transaction form
+  async function populateAccountSelect() {
+      const accounts = await API.getAccounts();
+      const selectElement = document.getElementById('transaction-account');
+
+      accounts.forEach(account => {
+          const option = document.createElement('option');
+          option.value = account._id;
+          option.textContent = `${account.name} (${formatCurrency(account.balance)})`;
+          selectElement.appendChild(option);
+      });
+  }
+
+  // Initialize form when the modal is shown
+  document.getElementById('add-transaction-modal').addEventListener('shown.bs.modal', function() {
+      populateAccountSelect();
+
+      // Set default date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('transaction-date').value = today;
+  });
+</script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
