@@ -1,6 +1,5 @@
 // app.js - Hauptanwendungsdatei
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -8,6 +7,7 @@ const path = require('path');
 require('dotenv').config();
 
 // Routen importieren
+const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const accountRoutes = require('./routes/accounts');
 const transactionRoutes = require('./routes/transactions');
@@ -27,15 +27,7 @@ app.use(morgan('dev'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Datenbankverbindung
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB verbunden'))
-.catch(err => {
-    console.error('Fehler bei MongoDB-Verbindung:', err.message);
-    process.exit(1);
-});
+connectDB();
 
 // Routen einbinden
 app.use('/api/auth', authRoutes);
