@@ -1,12 +1,11 @@
 // config/db.js
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-
 dotenv.config();
-
+const uri = process.env.DB_CONNECTION || 'mongodb://localhost/default_db';
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
+    await mongoose.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
@@ -16,5 +15,4 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
-
 module.exports = connectDB;
