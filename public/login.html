@@ -191,6 +191,7 @@
             <h1>Finance<span>Manager</span></h1>
         </div>
         <h2>Login</h2>
+        <p class="error-message" id="error-message"></p>
         <form id="loginForm">
             <div class="form-group">
                 <label for="email">Email</label>
@@ -206,37 +207,62 @@
             </div>
             <button type="submit">Login</button>
             <div class="links">
-                <a href="#forgot-password">Forgot Password?</a>
+                <a href="#">Forgot Password?</a>
                 <a href="register.html">Register</a>
-            </div>
-            <div class="separator">
-                <span>or login with</span>
-            </div>
-            <div class="social-login">
-                <div class="social-btn" title="Google">G</div>
-                <div class="social-btn" title="Facebook">f</div>
-                <div class="social-btn" title="Apple">a</div>
             </div>
         </form>
     </div>
 </div>
+
 <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+    document.addEventListener("DOMContentLoaded", () => {
+        checkAutoLogin();
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const remember = document.getElementById('remember').checked;
+        const errorMessage = document.getElementById('error-message');
 
-        // You would typically send this data to your server for authentication
-        console.log('Login attempt:', { email, password, remember });
+        errorMessage.style.display = "none"; // Fehler verstecken
 
-        // For demo purposes only - would be handled by server in real app
-        if (email && password) {
-            // Redirect to dashboard on successful login
-            window.location.href = 'dashboard.html';
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Login failed');
+            }
+
+            // Token speichern
+            if (remember) {
+                localStorage.setItem("token", data.token); // Token im localStorage speichern
+            } else {
+                sessionStorage.setItem("token", data.token); // Nur für die Session speichern
+            }
+
+            window.location.href = 'dashboard.html'; // Weiterleitung
+        } catch (error) {
+            errorMessage.textContent = error.message;
+            errorMessage.style.display = "block";
         }
     });
+
+    function checkAutoLogin() {
+        const token = localStorage.getItem("token");
+        if (token) {
+            window.location.href = 'dashboard.html'; // Auto-Login, wenn Token existiert
+        }
+    }
 </script>
+
 </body>
 </html>
